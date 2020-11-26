@@ -1,0 +1,4 @@
+easydict==1.9
+gpustat==0.6.0
+opencv-python==4.2.0.34
+scikit-learn==0.23.0

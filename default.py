@@ -18,7 +18,7 @@ def generate_config(loss_name, dataset, network):
     config.frequent = 200
     config.verbose_flag = False
     config.verbose = 2000
-    config.data_shape = (3, 112, 112)
+    config.data_shape = (3, 256, 128)
 
     if loss_name == 'arcface':
         config.loss_s = 64.0
@@ -111,19 +111,19 @@ def generate_config(loss_name, dataset, network):
      ## zunyi_set_260w
     elif dataset == 'zunyi_set_260w':
         config.lr_steps = '140000,200000'
-        config.sample_ratio = 0.1
+        config.sample_ratio = 1.0
         config.fp16 = True
         config.scheduler_type = 'sgd'
         #
         config.val_targets = ['agedb_30', 'calfw', 'cfp_ff', 'cplfw', 'lfw', 'vgg2_fp']
         config.rec_list = [
-            '/reid/haiqiang_data/shuf_train_zunyi_set_260w/shuf_train_zunyi_set_260w.rec',
+            '/home/ubuntu/reid_zunyi_260w/shuf_train_zunyi_set_260w.rec',
         ]
         #
         config.head_name_list = ['zunyi_set_260w']
         config.memory_lr_scale_list = [1.0]
         config.num_classes_list = [2600635]
-        config.batch_size = 64
+        config.batch_size = 128
         config.max_update = 220000
         config.warmup_steps = config.max_update // 5
         config.backbone_lr = 0.1
@@ -139,7 +139,7 @@ def generate_config(loss_name, dataset, network):
         #
         config.val_targets = ['agedb_30', 'calfw', 'cfp_ff', 'cplfw', 'lfw', 'vgg2_fp']
         config.rec_list = [
-            '/reid/datasets_reid/market_ducket_cuhk03_person28w/market_ducket_cuhk03_person28w.rec',
+            '/home/ubuntu/market_ducket_cuhk03_person28w/market_ducket_cuhk03_person28w.rec',
         ]
         #
         config.head_name_list = ['market_ducket_cuhk03_person28w']
@@ -155,13 +155,13 @@ def generate_config(loss_name, dataset, network):
 
     # network
     if network == 'r100':
-        config.net_name = 'resnet'
+        config.net_name = 'fresnet'
         config.num_layers = 100
     elif network == 'r122':
-        config.net_name = 'resnet'
+        config.net_name = 'fresnet'
         config.num_layers = 122
     elif network == 'r50':
-        config.net_name = 'resnet'
+        config.net_name = 'fresnet'
         config.num_layers = 50
     elif network == 'rx101':
         config.net_name = 'fresnext'

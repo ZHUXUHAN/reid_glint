@@ -39,8 +39,8 @@ def Conv(**kwargs):
 
 
 def Act(data, act_type, name):
-    if act_type == 'leaky':
-        body = mx.sym.LeakyReLU(data=data, act_type='leaky', name=name)
+    if act_type == 'prelu':
+        body = mx.sym.LeakyReLU(data=data, act_type='prelu', name=name)
     else:
         body = mx.symbol.Activation(data=data, act_type=act_type, name=name)
     return body
@@ -73,25 +73,25 @@ def residual_unit_v1(data, num_filter, stride, dim_match, name, bottle_neck, **k
     # print('in unit1')
     if bottle_neck:
         conv1 = Conv(data=data, num_filter=int(num_filter * 0.25), kernel=(1, 1), stride=stride, pad=(0, 0),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn1 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
         act1 = Act(data=bn1, act_type=act_type, name=name + '_relu1')
         conv2 = Conv(data=act1, num_filter=int(num_filter * 0.25), kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn2 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
         act2 = Act(data=bn2, act_type=act_type, name=name + '_relu2')
         conv3 = Conv(data=act2, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0), no_bias=True,
-            workspace=workspace, name=name + '_conv3')
+                     workspace=workspace, name=name + '_conv3')
         bn3 = mx.sym.BatchNorm(data=conv3, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn3')
 
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=bn3, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             bn3 = mx.symbol.broadcast_mul(bn3, body)
             # se end
@@ -100,27 +100,27 @@ def residual_unit_v1(data, num_filter, stride, dim_match, name, bottle_neck, **k
             shortcut = data
         else:
             conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_conv1sc')
+                           workspace=workspace, name=name + '_conv1sc')
             shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
         return Act(data=bn3 + shortcut, act_type=act_type, name=name + '_relu3')
     else:
         conv1 = Conv(data=data, num_filter=num_filter, kernel=(3, 3), stride=stride, pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn1 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_bn1')
         act1 = Act(data=bn1, act_type=act_type, name=name + '_relu1')
         conv2 = Conv(data=act1, num_filter=num_filter, kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn2 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_bn2')
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=bn2, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             bn2 = mx.symbol.broadcast_mul(bn2, body)
             # se end
@@ -129,7 +129,7 @@ def residual_unit_v1(data, num_filter, stride, dim_match, name, bottle_neck, **k
             shortcut = data
         else:
             conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_conv1sc')
+                           workspace=workspace, name=name + '_conv1sc')
             shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
@@ -163,25 +163,25 @@ def residual_unit_v1_L(data, num_filter, stride, dim_match, name, bottle_neck, *
     # print('in unit1')
     if bottle_neck:
         conv1 = Conv(data=data, num_filter=int(num_filter * 0.25), kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn1 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
         act1 = Act(data=bn1, act_type=act_type, name=name + '_relu1')
         conv2 = Conv(data=act1, num_filter=int(num_filter * 0.25), kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn2 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
         act2 = Act(data=bn2, act_type=act_type, name=name + '_relu2')
         conv3 = Conv(data=act2, num_filter=num_filter, kernel=(1, 1), stride=stride, pad=(0, 0), no_bias=True,
-            workspace=workspace, name=name + '_conv3')
+                     workspace=workspace, name=name + '_conv3')
         bn3 = mx.sym.BatchNorm(data=conv3, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn3')
 
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=bn3, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             bn3 = mx.symbol.broadcast_mul(bn3, body)
             # se end
@@ -190,27 +190,27 @@ def residual_unit_v1_L(data, num_filter, stride, dim_match, name, bottle_neck, *
             shortcut = data
         else:
             conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_conv1sc')
+                           workspace=workspace, name=name + '_conv1sc')
             shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
         return Act(data=bn3 + shortcut, act_type=act_type, name=name + '_relu3')
     else:
         conv1 = Conv(data=data, num_filter=num_filter, kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn1 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_bn1')
         act1 = Act(data=bn1, act_type=act_type, name=name + '_relu1')
         conv2 = Conv(data=act1, num_filter=num_filter, kernel=(3, 3), stride=stride, pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn2 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_bn2')
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=bn2, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             bn2 = mx.symbol.broadcast_mul(bn2, body)
             # se end
@@ -219,7 +219,7 @@ def residual_unit_v1_L(data, num_filter, stride, dim_match, name, bottle_neck, *
             shortcut = data
         else:
             conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_conv1sc')
+                           workspace=workspace, name=name + '_conv1sc')
             shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
@@ -256,30 +256,30 @@ def residual_unit_v2(data, num_filter, stride, dim_match, name, bottle_neck, **k
         bn1 = mx.sym.BatchNorm(data=data, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
         act1 = Act(data=bn1, act_type=act_type, name=name + '_relu1')
         conv1 = Conv(data=act1, num_filter=int(num_filter * 0.25), kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn2 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
         act2 = Act(data=bn2, act_type=act_type, name=name + '_relu2')
         conv2 = Conv(data=act2, num_filter=int(num_filter * 0.25), kernel=(3, 3), stride=stride, pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn3 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn3')
         act3 = Act(data=bn3, act_type=act_type, name=name + '_relu3')
         conv3 = Conv(data=act3, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0), no_bias=True,
-            workspace=workspace, name=name + '_conv3')
+                     workspace=workspace, name=name + '_conv3')
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=conv3, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             conv3 = mx.symbol.broadcast_mul(conv3, body)
         if dim_match:
             shortcut = data
         else:
             shortcut = Conv(data=act1, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_sc')
+                            workspace=workspace, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
         return conv3 + shortcut
@@ -287,26 +287,26 @@ def residual_unit_v2(data, num_filter, stride, dim_match, name, bottle_neck, **k
         bn1 = mx.sym.BatchNorm(data=data, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_bn1')
         act1 = Act(data=bn1, act_type=act_type, name=name + '_relu1')
         conv1 = Conv(data=act1, num_filter=num_filter, kernel=(3, 3), stride=stride, pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn2 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_bn2')
         act2 = Act(data=bn2, act_type=act_type, name=name + '_relu2')
         conv2 = Conv(data=act2, num_filter=num_filter, kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=conv2, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             conv2 = mx.symbol.broadcast_mul(conv2, body)
         if dim_match:
             shortcut = data
         else:
             shortcut = Conv(data=act1, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_sc')
+                            workspace=workspace, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
         return conv2 + shortcut
@@ -340,25 +340,25 @@ def residual_unit_v3(data, num_filter, stride, dim_match, name, bottle_neck, **k
     if bottle_neck:
         bn1 = mx.sym.BatchNorm(data=data, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
         conv1 = Conv(data=bn1, num_filter=int(num_filter * 0.25), kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn2 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
         act1 = Act(data=bn2, act_type=act_type, name=name + '_relu1')
         conv2 = Conv(data=act1, num_filter=int(num_filter * 0.25), kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn3 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn3')
         act2 = Act(data=bn3, act_type=act_type, name=name + '_relu2')
         conv3 = Conv(data=act2, num_filter=num_filter, kernel=(1, 1), stride=stride, pad=(0, 0), no_bias=True,
-            workspace=workspace, name=name + '_conv3')
+                     workspace=workspace, name=name + '_conv3')
         bn4 = mx.sym.BatchNorm(data=conv3, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn4')
 
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=bn4, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             bn4 = mx.symbol.broadcast_mul(bn4, body)
             # se end
@@ -367,7 +367,7 @@ def residual_unit_v3(data, num_filter, stride, dim_match, name, bottle_neck, **k
             shortcut = data
         else:
             conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_conv1sc')
+                           workspace=workspace, name=name + '_conv1sc')
             shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
@@ -375,20 +375,20 @@ def residual_unit_v3(data, num_filter, stride, dim_match, name, bottle_neck, **k
     else:
         bn1 = mx.sym.BatchNorm(data=data, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
         conv1 = Conv(data=bn1, num_filter=num_filter, kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv1')
+                     no_bias=True, workspace=workspace, name=name + '_conv1')
         bn2 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
         act1 = Act(data=bn2, act_type=act_type, name=name + '_relu1')
         conv2 = Conv(data=act1, num_filter=num_filter, kernel=(3, 3), stride=stride, pad=(1, 1),
-            no_bias=True, workspace=workspace, name=name + '_conv2')
+                     no_bias=True, workspace=workspace, name=name + '_conv2')
         bn3 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn3')
         if use_se:
             # se begin
             body = mx.sym.Pooling(data=bn3, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
             body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv1", workspace=workspace)
+                        name=name + "_se_conv1", workspace=workspace)
             body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
             body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-                name=name + "_se_conv2", workspace=workspace)
+                        name=name + "_se_conv2", workspace=workspace)
             body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
             bn3 = mx.symbol.broadcast_mul(bn3, body)
             # se end
@@ -397,7 +397,7 @@ def residual_unit_v3(data, num_filter, stride, dim_match, name, bottle_neck, **k
             shortcut = data
         else:
             conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-                workspace=workspace, name=name + '_conv1sc')
+                           workspace=workspace, name=name + '_conv1sc')
             shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, momentum=bn_mom, eps=2e-5, name=name + '_sc')
         if memonger:
             shortcut._set_attr(mirror_stage='True')
@@ -433,27 +433,27 @@ def residual_unit_v3_x(data, num_filter, stride, dim_match, name, bottle_neck, *
     # print('in unit3')
     bn1 = mx.sym.BatchNorm(data=data, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn1')
     conv1 = Conv(data=bn1, num_group=num_group, num_filter=int(num_filter * 0.5), kernel=(1, 1), stride=(1, 1),
-        pad=(0, 0),
-        no_bias=True, workspace=workspace, name=name + '_conv1')
+                 pad=(0, 0),
+                 no_bias=True, workspace=workspace, name=name + '_conv1')
     bn2 = mx.sym.BatchNorm(data=conv1, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn2')
     act1 = Act(data=bn2, act_type=act_type, name=name + '_relu1')
     conv2 = Conv(data=act1, num_group=num_group, num_filter=int(num_filter * 0.5), kernel=(3, 3), stride=(1, 1),
-        pad=(1, 1),
-        no_bias=True, workspace=workspace, name=name + '_conv2')
+                 pad=(1, 1),
+                 no_bias=True, workspace=workspace, name=name + '_conv2')
     bn3 = mx.sym.BatchNorm(data=conv2, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn3')
     act2 = Act(data=bn3, act_type=act_type, name=name + '_relu2')
     conv3 = Conv(data=act2, num_filter=num_filter, kernel=(1, 1), stride=stride, pad=(0, 0), no_bias=True,
-        workspace=workspace, name=name + '_conv3')
+                 workspace=workspace, name=name + '_conv3')
     bn4 = mx.sym.BatchNorm(data=conv3, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_bn4')
 
     if use_se:
         # se begin
         body = mx.sym.Pooling(data=bn4, global_pool=True, kernel=(7, 7), pool_type='avg', name=name + '_se_pool1')
         body = Conv(data=body, num_filter=num_filter // 16, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-            name=name + "_se_conv1", workspace=workspace)
+                    name=name + "_se_conv1", workspace=workspace)
         body = Act(data=body, act_type=act_type, name=name + '_se_relu1')
         body = Conv(data=body, num_filter=num_filter, kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-            name=name + "_se_conv2", workspace=workspace)
+                    name=name + "_se_conv2", workspace=workspace)
         body = mx.symbol.Activation(data=body, act_type='sigmoid', name=name + "_se_sigmoid")
         bn4 = mx.symbol.broadcast_mul(bn4, body)
         # se end
@@ -462,7 +462,7 @@ def residual_unit_v3_x(data, num_filter, stride, dim_match, name, bottle_neck, *
         shortcut = data
     else:
         conv1sc = Conv(data=data, num_filter=num_filter, kernel=(1, 1), stride=stride, no_bias=True,
-            workspace=workspace, name=name + '_conv1sc')
+                       workspace=workspace, name=name + '_conv1sc')
         shortcut = mx.sym.BatchNorm(data=conv1sc, fix_gamma=False, eps=2e-5, momentum=bn_mom, name=name + '_sc')
     if memonger:
         shortcut._set_attr(mirror_stage='True')
@@ -523,14 +523,14 @@ def resnet(units, num_stages, filter_list, num_classes, bottle_neck, **kwargs):
         data = data - 127.5
         data = data * 0.0078125
         body = Conv(data=data, num_filter=filter_list[0], kernel=(7, 7), stride=(2, 2), pad=(3, 3),
-            no_bias=True, name="conv0", workspace=workspace)
+                    no_bias=True, name="conv0", workspace=workspace)
         body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn0')
         body = Act(data=body, act_type=act_type, name='relu0')
         # body = mx.sym.Pooling(data=body, kernel=(3, 3), stride=(2,2), pad=(1,1), pool_type='max')
     elif version_input == 2:
         data = mx.sym.BatchNorm(data=data, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='bn_data')
         body = Conv(data=data, num_filter=filter_list[0], kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, name="conv0", workspace=workspace)
+                    no_bias=True, name="conv0", workspace=workspace)
         body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn0')
         body = Act(data=body, act_type=act_type, name='relu0')
     else:
@@ -539,7 +539,7 @@ def resnet(units, num_stages, filter_list, num_classes, bottle_neck, **kwargs):
         # data = data*0.0078125
         body = data
         body = Conv(data=body, num_filter=filter_list[0], kernel=(3, 3), stride=(1, 1), pad=(1, 1),
-            no_bias=True, name="conv0", workspace=workspace)
+                    no_bias=True, name="conv0", workspace=workspace)
         body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn0')
         body = Act(data=body, act_type=act_type, name='relu0')
 
@@ -551,37 +551,130 @@ def resnet(units, num_stages, filter_list, num_classes, bottle_neck, **kwargs):
         #  body = residual_unit(body, filter_list[i+1], (2, 2), False,
         #    name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, **kwargs)
         body = residual_unit(body, filter_list[i + 1], (2, 2), False,
-            name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, **kwargs)
+                             name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, **kwargs)
         for j in range(units[i] - 1):
             body = residual_unit(body, filter_list[i + 1], (1, 1), True, name='stage%d_unit%d' % (i + 1, j + 2),
-                bottle_neck=bottle_neck, **kwargs)
+                                 bottle_neck=bottle_neck, **kwargs)
 
     if config.fp16:
         body = mx.sym.Cast(data=body, dtype=np.float32)  # for fp16
 
     body = mx.sym.Convolution(data=body, num_filter=int(num_classes / 8), kernel=(1, 1), stride=(1, 1), pad=(0, 0),
-        no_bias=True, name="conv_final", workspace=workspace)
+                              no_bias=True, name="conv_final", workspace=workspace)
     body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn1')
+    # body = Act(data=body, act_type=act_type, name='relud')
+    # body = mx.sym.slice(data=body, begin=(0, 0, 0, 0), end=(None, None, 10, 14))
     fc1 = mx.sym.FullyConnected(data=body, num_hidden=num_classes, name='pre_fc1')
-    ## if you use synBN, then close it below
-    # body = mx.symbol.Dropout(data=body, p=0.4)
-    # fc1 = mx.sym.BatchNorm(data=body, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='fc1')
     return fc1
 
 
-def get_symbol(num_classes, num_layers, **kwargs):
+# def resnet_pcb(units, num_stages, filter_list, num_classes, bottle_neck, **kwargs):
+#     bn_mom = kwargs.get('bn_mom', 0.9)
+#     workspace = kwargs.get('workspace', 256)
+#     """Return ResNet symbol of
+#     Parameters
+#     ----------
+#     units : list
+#         Number of units in each stage
+#     num_stages : int
+#         Number of stage
+#     filter_list : list
+#         Channel size of each stage
+#     num_classes : int
+#         Ouput size of symbol
+#     dataset : str
+#         Dataset type, only cifar10 and imagenet supports
+#     workspace : int
+#         Workspace used in convolution operator
+#     """
+#     version_se = kwargs.get('version_se', 1)
+#     version_input = kwargs.get('version_input', 1)
+#     assert version_input >= 0
+#     version_output = kwargs.get('version_output', 'E')
+#     fc_type = version_output
+#     version_unit = kwargs.get('version_unit', 3)
+#     act_type = kwargs.get('version_act', 'relu')
+#     print(version_se, version_input, version_output, version_unit, act_type)
+#     num_unit = len(units)
+#     assert (num_unit == num_stages)
+#     data = mx.sym.Variable(name='data')
+#     if config.fp16:
+#         data = mx.sym.Cast(data=data, dtype=np.float16)  # for fp16
+#     if version_input == 0:
+#         # data = mx.sym.BatchNorm(data=data, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='bn_data')
+#         data = mx.sym.identity(data=data, name='id')
+#         data = data - 127.5
+#         data = data * 0.0078125
+#         body = Conv(data=data, num_filter=filter_list[0], kernel=(7, 7), stride=(2, 2), pad=(3, 3),
+#                     no_bias=True, name="conv0", workspace=workspace)
+#         body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn0')
+#         body = Act(data=body, act_type=act_type, name='relu0')
+#         # body = mx.sym.Pooling(data=body, kernel=(3, 3), stride=(2,2), pad=(1,1), pool_type='max')
+#     elif version_input == 2:
+#         data = mx.sym.BatchNorm(data=data, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='bn_data')
+#         body = Conv(data=data, num_filter=filter_list[0], kernel=(3, 3), stride=(1, 1), pad=(1, 1),
+#                     no_bias=True, name="conv0", workspace=workspace)
+#         body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn0')
+#         body = Act(data=body, act_type=act_type, name='relu0')
+#     else:
+#         # data = mx.sym.identity(data=data, name='id')
+#         # data = data-127.5
+#         # data = data*0.0078125
+#         body = data
+#         body = Conv(data=body, num_filter=filter_list[0], kernel=(3, 3), stride=(1, 1), pad=(1, 1),
+#                     no_bias=True, name="conv0", workspace=workspace)
+#         body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn0')
+#         body = Act(data=body, act_type=act_type, name='relu0')
+#
+#     for i in range(num_stages):
+#         # if version_input==0:
+#         #  body = residual_unit(body, filter_list[i+1], (1 if i==0 else 2, 1 if i==0 else 2), False,
+#         #                       name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, **kwargs)
+#         # else:
+#         #  body = residual_unit(body, filter_list[i+1], (2, 2), False,
+#         #    name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, **kwargs)
+#         body = residual_unit(body, filter_list[i + 1], (2, 2), False,
+#                              name='stage%d_unit%d' % (i + 1, 1), bottle_neck=bottle_neck, **kwargs)
+#         for j in range(units[i] - 1):
+#             body = residual_unit(body, filter_list[i + 1], (1, 1), True, name='stage%d_unit%d' % (i + 1, j + 2),
+#                                  bottle_neck=bottle_neck, **kwargs)
+#
+#     if config.fp16:
+#         body = mx.sym.Cast(data=body, dtype=np.float32)  # for fp16
+#
+#     body = mx.sym.a
+#     for i in range(3):
+#         body = mx.sym.Convolution(data=body, num_filter=int(num_classes / 8), kernel=(1, 1), stride=(1, 1), pad=(0, 0),
+#                                   no_bias=True, name="conv_final", workspace=workspace)
+#     body = mx.sym.BatchNorm(data=body, fix_gamma=False, eps=2e-5, momentum=bn_mom, name='bn1')
+#     fc1 = mx.sym.FullyConnected(data=body, num_hidden=num_classes, name='pre_fc1')
+#     ## if you use synBN, then close it below
+#     # body = mx.symbol.Dropout(data=body, p=0.4)
+#     # fc1 = mx.sym.BatchNorm(data=body, fix_gamma=True, eps=2e-5, momentum=bn_mom, name='fc1')
+#     return fc1
+
+
+def get_symbol():
     """
     Adapted from https://github.com/tornadomeet/ResNet/blob/master/train_resnet.py
     Original author Wei Wu
     """
-    # num_classes = config.embedding_size
-    # num_layers = config.num_layers
+    num_classes = config.embedding_size
+    num_layers = config.num_layers
+    kwargs = {'version_se': config.net_se,
+              'version_input': config.net_input,
+              'version_output': config.net_output,
+              'version_unit': config.net_unit,
+              'version_act': config.net_act,
+              'bn_mom': config.bn_mom,
+              'workspace': config.workspace,
+              'memonger': config.memonger,
+              }
     if num_layers >= 101:
         filter_list = [64, 256, 512, 1024, 2048]
         bottle_neck = True
     else:
         filter_list = [64, 64, 128, 256, 512]
-        # filter_list = [24, 24, 48, 96, 192]
         bottle_neck = False
     num_stages = 4
     if num_layers == 18:
@@ -618,8 +711,8 @@ def get_symbol(num_classes, num_layers, **kwargs):
         raise ValueError("no experiments done on num_layers {}, you can do it yourself".format(num_layers))
 
     return resnet(units=units,
-        num_stages=num_stages,
-        filter_list=filter_list,
-        num_classes=num_classes,
-        bottle_neck=bottle_neck,
-        **kwargs)
+                  num_stages=num_stages,
+                  filter_list=filter_list,
+                  num_classes=num_classes,
+                  bottle_neck=bottle_neck,
+                  **kwargs)

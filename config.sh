@@ -16,7 +16,7 @@ export MXNET_ENGINE_TYPE=ThreadedEnginePerDevice
 PYTHON_EXEC=/home/ubuntu/miniconda3/envs/mxnet/bin/python
 
 ${PYTHON_EXEC} train_memory.py \
---dataset market_ducket_cuhk03_person28w \
+--dataset zunyi_set_260w \
 --loss cosface \
---network r50 \
---models-root /home/ubuntu/zhuxuhan/reid/reid_model/market_ducket_cuhk03_person28w-r50
+--network r100 \
+--models-root /anxiang/reid_model/zunyi_set_260w-r100
